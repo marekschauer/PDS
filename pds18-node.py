@@ -9,6 +9,7 @@ import fileinput
 import sys
 import os
 import messages
+import argparse
 import queue
 from datetime import datetime
 
@@ -24,7 +25,9 @@ class RecieveMessagesThread (threading.Thread):
         self.dictMutex = dict_mutex
     def run(self):
         while True:
+            
             data, (message_ip_from, message_port_from) = self.sock.recvfrom(4096)
+            
             try:
                 msgType = messages.Command.msgType(data)
             except:
@@ -35,16 +38,21 @@ class RecieveMessagesThread (threading.Thread):
             
                 self.dictMutex.acquire()
                 if msgType == "hello":
+                    print("*******************Prijal som hello od ", message_ip_from
+                    , ":", message_port_from)
                     # command = messages.MessageCommand(data)
                     # command.sendAck(self.sock, message_ip_from, message_port_from)
                     # self.msgDict[command.txid] = command
                     pass
                 elif msgType == "getlist":
                     command = messages.GetListCommand(data)
-                    print("idem poslat ack...")
-                    command.sendAck(self.sock, message_ip_from, message_port_from)
-                    print("poslal som ack...")
-                    #TODO - posleme list peerov, ktore mame uschovane
+                    if True:
+                        command.sendAck(self.sock, message_ip_from, message_port_from)
+                        #TODO - posleme list peerov, ktore mame uschovane
+                        answer = messages.ListCommand({"type":"list", "txid":command.txid, "peers": {"0":{"username":"marekschauer", "ipv4": "192.168.1.17", "port": 34567}, "1":{"username":"shukarfale", "ipv4": "192.168.1.17", "port": 35765}}})
+                        answer.send(self.sock, message_ip_from, message_port_from)
+                    else:
+                        command.sendError(self.sock, message_ip_from, message_port_from, "Ahhh, nieco sa mi tu pokazilo :-(")
                     pass
                 elif msgType == "update":
                     # command = messages.ListCommand(data)
@@ -74,12 +82,17 @@ class RecieveMessagesThread (threading.Thread):
                 self.dictMutex.release()
 
 
+# --id <identifikátor> --reg-ipv4 <IP> --reg-port <port>
+parser = argparse.ArgumentParser()
+parser.add_argument("--id", help="increase output verbosity", required=True, type=str)
+parser.add_argument("--reg-ipv4", help="your ipv4 address", required=True, type=str)
+parser.add_argument("--reg-port", help="your port", required=True, type=int)
+args = parser.parse_args()
 
-UDP_IP   = '192.168.1.17'
-UDP_PORT = 13005
-REG_NODE_UDP_IP = '192.168.1.17'
-REG_NODE_UDP_PORT = 5678
-PEER_ID = "951627843"
+
+UDP_IP   = args.reg_ipv4
+UDP_PORT = args.reg_port
+PEER_ID = args.id
 
 msgDict = dict()
 lstDict = dict()
@@ -90,10 +103,10 @@ dictMutex = threading.Lock()
 
 
 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+print("~~~~~~~~~~I AM REGISTRATION NODE~~~~~~~~~~~~~~~")
+print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 print("My IP: ", UDP_IP)
 print("My PORT: ", UDP_PORT)
-print("Registration node IP: ", REG_NODE_UDP_IP)
-print("Registration node PORT: ", REG_NODE_UDP_PORT)
 print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -101,9 +114,3 @@ sock.bind((UDP_IP, UDP_PORT))
 
 recieveMessagesThread = RecieveMessagesThread(sock, msgDict, lstDict, ackDict, errDict, dictMutex)
 recieveMessagesThread.start()
-
-print("Idem poslat tu spravu teda...")
-toBeSent = messages.MessageCommand(bytes("d4:from8:xlogin007:message9:blablabla2:to8:xnigol994:txidi6546e4:type7:messagee".encode("utf-8")))
-toBeSent.send(sock, REG_NODE_UDP_IP, REG_NODE_UDP_PORT)
-
-

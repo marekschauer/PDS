@@ -1,6 +1,7 @@
 import json
 import bencode
 import abc
+import random
 
 #TODO: implementuj vsade bencode metodu
 
@@ -12,7 +13,6 @@ class Command(metaclass=abc.ABCMeta):
 			self.txid = self.commandDict['txid']
 			pass
 		except:
-			# Neslo mi to rozdekodovat...
 			self.ready = False
 		else:
 			self.ready = True
@@ -23,6 +23,7 @@ class Command(metaclass=abc.ABCMeta):
 		self.txid = self.commandDict['txid']
 		return self
 	def fromObject(self, obj):
+		self.commandDict = bencode.decode(bencode.encode(obj))
 		self.type = obj['type']
 		self.txid = obj['txid']
 		return self
@@ -31,25 +32,45 @@ class Command(metaclass=abc.ABCMeta):
 		return ""
 	def send(self, sckt, dstIp, dstPort):
 		toBeSent = self.bencode()
-		# ak tu nema byt to encode("utf-8"), tak to presetri, lebo
-		# pri posielani ack to tu bolo treba
 		sckt.sendto(bytes(toBeSent), (dstIp, dstPort))
 	def sendAck(self, sckt, dstIp, dstPort):
 		ack = AckCommand(("d4:txidi" + str(self.txid) + "e4:type3:acke").encode("utf-8"))
 		ack.send(sckt, dstIp, dstPort)
+	def sendError(self, sckt, dstIp, dstPort, errMessage):
+		err = ErrorCommand({
+			"txid":self.txid,
+			"type":"error",
+			"verbose":errMessage
+			})
+		err.send(sckt, dstIp, dstPort)
+		print(err.verbose)
 	@staticmethod
 	def msgType(bencodedMessage):
 		msgDict = bencode.decode(bencodedMessage)
 		return msgDict['type']
+	@staticmethod
+	def txidGenerate():
+		return random.randrange(0,65535)
+	
 		
 
 class HelloCommand(Command):
 	"""docstring for HelloCommand"""
 	def __init__(self, commandBody):
 		super(HelloCommand, self).__init__("hello", commandBody)
+		if not self.ready:
+			self.fromObject(commandBody)
 		self.username = self.commandDict['username']
 		self.ipv4 = self.commandDict['ipv4']
 		self.port = self.commandDict['port']
+	def bencode(self):
+		return bencode.bencode({
+			"type": self.type,
+			"txid": self.txid,
+			"username": self.username,
+			"ipv4": self.ipv4,
+			"port": self.port
+			})
 
 class GetListCommand(Command):
 	def __init__(self, commandBody):
@@ -70,18 +91,43 @@ class AckCommand(Command):
 class ErrorCommand(Command):
 	def __init__(self, commandBody):
 		super(ErrorCommand, self).__init__("error", commandBody)
+		if not self.ready:
+			self.fromObject(commandBody)
 		self.verbose = self.commandDict['verbose']
+	def bencode(self):
+		return bencode.bencode({"type":self.type, "txid":self.txid, "verbose": self.verbose})
 
 class ListCommand(Command):
 	def __init__(self, commandBody):
 		super(ListCommand, self).__init__("list", commandBody)
+		if not self.ready:
+			self.fromObject(commandBody)
 		self.peers = self.commandDict['peers']
 	def bencode(self):
-	 return bencode.bencode({"type":self.type, "txid":self.txid, "peers": self.peers})
+		return bencode.bencode({"type":self.type, "txid":self.txid, "peers": self.peers})
+	def isUserThere(self, username):
+		for key in self.peers:
+			if self.peers[key]["username"] == username:
+				return True
+		return False
+	def getUserAddr(self, username):
+		for key in self.peers:
+			if self.peers[key]["username"] == username:
+				return (self.peers[key]["ipv4"],self.peers[key]["port"])
+		return (False, False)
+	def printPeers(self):
+		for key in self.peers:
+			peerUsername = self.peers[key]["username"]
+			peerPort = self.peers[key]["port"]
+			peerIp = self.peers[key]["ipv4"]
+			print(peerUsername, "\t\t\t", str(peerIp) + ":" + str(peerPort))
+
 
 class MessageCommand(Command):
 	def __init__(self, commandBody):
 		super(MessageCommand, self).__init__("message", commandBody)
+		if not self.ready:
+			self.fromObject(commandBody)
 		self.fromWho = self.commandDict['from']
 		self.to = self.commandDict['to']
 		self.message = self.commandDict['message']
