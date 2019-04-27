@@ -49,7 +49,28 @@ class RecieveMessagesThread (threading.Thread):
                     if True:
                         command.sendAck(self.sock, message_ip_from, message_port_from)
                         #TODO - posleme list peerov, ktore mame uschovane
-                        answer = messages.ListCommand({"type":"list", "txid":command.txid, "peers": {"0":{"username":"marekschauer", "ipv4": "192.168.1.17", "port": 34567}, "1":{"username":"shukarfale", "ipv4": "192.168.1.17", "port": 35765}}})
+                        answer = messages.ListCommand({
+                            "type":"list", 
+                            "txid":command.txid, 
+                            "peers": {
+                                "0":{
+                                    "username":"marekschauer", 
+                                    "ipv4": "192.168.1.17", 
+                                    "port": 34567
+                                    }, 
+                                "1":{
+                                    "username":"shukarfale", 
+                                    "ipv4": "192.168.1.17", 
+                                    "port": 35765
+                                    
+                                },
+                                "2":{
+                                    "username":"xschau00", 
+                                    "ipv4": "192.168.1.8", 
+                                    "port": 13010
+                                    }
+                                }
+                            })
                         answer.send(self.sock, message_ip_from, message_port_from)
                     else:
                         command.sendError(self.sock, message_ip_from, message_port_from, "Ahhh, nieco sa mi tu pokazilo :-(")

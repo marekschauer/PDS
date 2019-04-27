@@ -41,7 +41,7 @@ class RecieveMessagesThread (threading.Thread):
                 print(data, sys.stderr)
             else:
                 command = None
-                print("-"*20)
+                # print("-"*20)
                 self.dictMutex.acquire()
                 if msgType == "message":
                     command = messages.MessageCommand(data)
@@ -78,22 +78,24 @@ class RecieveMessagesThread (threading.Thread):
                     pass
                 else:
                     print("Peer recieved unsupported type of message. Message is being ignored", sys.stderr)
-                print("msgDict", self.msgDict)
-                print("lstDict", self.lstDict)
-                print("ackDict", self.ackDict)
-                print("errDict", self.errDict)
+                # print("msgDict", self.msgDict)
+                # print("lstDict", self.lstDict)
+                # print("ackDict", self.ackDict)
+                # print("errDict", self.errDict)
                 self.dictMutex.release()  
     def stop(self):
         self.stopevent.set()
 
 class KeepConnectionThread(threading.Thread):
-    def __init__(self, sock, reg_node_ip, reg_node_port, username):
+    def __init__(self, sock, my_ip, my_port, reg_node_ip, reg_node_port, username):
         threading.Thread.__init__(self)
         self.stopevent = threading.Event()
         self.sock = sock
         self.reg_node_ip = reg_node_ip
         self.reg_node_port = reg_node_port
         self.username = username
+        self.my_ip = my_ip
+        self.my_port = my_port
     def run(self):
         while not self.stopevent.isSet():
             # sprava na poslanie v json a nasledne ju zakoduj
@@ -101,8 +103,8 @@ class KeepConnectionThread(threading.Thread):
                 "type":"hello", 
                 "txid": messages.Command.txidGenerate(), 
                 "username": self.username, 
-                "ipv4": self.reg_node_ip, 
-                "port": self.reg_node_port
+                "ipv4": self.my_ip, 
+                "port": self.my_port
             }
             toBeSent = bencode.bencode(messageJSON)
             self.sock.sendto(toBeSent, (self.reg_node_ip, self.reg_node_port))
@@ -122,12 +124,14 @@ class KeepConnectionThread(threading.Thread):
 
 
 class RecieveCommandsFromRPC(threading.Thread):
-    def __init__(self, sock, reg_node_ip, reg_node_port, username, peer_id, msgDict, lstDict, ackDict, errDict, mutexes, keepConnectionThread):
+    def __init__(self, sock, my_ip, my_port, reg_node_ip, reg_node_port, username, peer_id, msgDict, lstDict, ackDict, errDict, mutexes, keepConnectionThread):
         threading.Thread.__init__(self)
         self.stopevent = threading.Event()
         self.sock = sock
         self.reg_node_ip = reg_node_ip
         self.reg_node_port = reg_node_port
+        self.my_ip = my_ip
+        self.my_port = my_port
         self.username = username
         self.peerId = peer_id
         if os.path.exists("/tmp/pds_rpc_peer_socket" + str(self.peerId)):
@@ -146,7 +150,7 @@ class RecieveCommandsFromRPC(threading.Thread):
         self.keepConnectionThread = keepConnectionThread
     def run(self):
         if os.path.exists("/tmp/pds_rpc_peer_socket" + str(self.peerId)):
-            print("existuje socket!")
+            # print("existuje socket!")
             
             while True:
                 # {'command': 'message', 'from': 'marekschauer', 'to': 'shukarfale', 'message': None}
@@ -167,7 +171,7 @@ class RecieveCommandsFromRPC(threading.Thread):
                     thisMoment = datetime.now()
                     while((datetime.now() - thisMoment).seconds < 2):
                         if getListMSG.txid in self.ackDict:
-                            print("prisiel nam ACK na spravu " + str(getListMSG.txid))
+                            # print("prisiel nam ACK na spravu " + str(getListMSG.txid))
                             ack = self.ackDict[getListMSG.txid]
                             self.ackDictMutex.acquire()
                             del self.ackDict[getListMSG.txid]
@@ -176,9 +180,9 @@ class RecieveCommandsFromRPC(threading.Thread):
                             while True:
                                 if getListMSG.txid in self.lstDict:
                                     listMsg = self.lstDict[getListMSG.txid]
-                                    print("$"*15)
-                                    print("jupiii, prijal som LIST spravu!")
-                                    print(listMsg.peers)
+                                    # print("$"*15)
+                                    # print("jupiii, prijal som LIST spravu!")
+                                    # print(listMsg.peers)
                                     self.lstDictMutex.acquire()
                                     del self.lstDict[getListMSG.txid]
                                     self.lstDictMutex.release()
@@ -193,12 +197,12 @@ class RecieveCommandsFromRPC(threading.Thread):
                                         dstIp, dstPort = listMsg.getUserAddr(messageToLogin)
                                         if dstIp != False and dstPort != False:
                                             messageToBeSent.send(self.sock, dstIp, dstPort)
-                                            print("Poslal som spravu na ", dstIp, ":", dstPort)
+                                            # print("Poslal som spravu na ", dstIp, ":", dstPort)
                                             thisMoment = datetime.now()
                                             while((datetime.now() - thisMoment).seconds < 2):
                                                 if messageToBeSent.txid in self.ackDict:
                                                     ack = self.ackDict[messageToBeSent.txid]
-                                                    print("Dostal som ACK na MESSAGE, ktoru som odoslal")
+                                                    # print("Dostal som ACK na MESSAGE, ktoru som odoslal")
                                                     self.ackDictMutex.acquire()
                                                     del self.ackDict[messageToBeSent.txid]
                                                     self.ackDictMutex.release()
@@ -211,7 +215,7 @@ class RecieveCommandsFromRPC(threading.Thread):
                                                     print("Following ERR mesage has been recieved from another peer as an answer to MESSAGE message:", sys.stderr)
                                                     print("\t\"" + errMsg.verbose + "\"")
                                                     break
-                                    print("$"*15)
+                                    # print("$"*15)
                                     break
                             break
                         elif getListMSG.txid in self.errDict:
@@ -298,7 +302,8 @@ class RecieveCommandsFromRPC(threading.Thread):
                     self.keepConnectionThread.logout()
                     newRegNodeIp = recievedCommandDict["reg_ipv4"]
                     newRegNodePort = recievedCommandDict["reg_port"]
-                    self.keepConnectionThread = KeepConnectionThread(self.sock, newRegNodeIp, int(newRegNodePort), self.username)
+                    print("hello")
+                    self.keepConnectionThread = KeepConnectionThread(self.sock, self.my_ip, self.my_port, newRegNodeIp, int(newRegNodePort), self.username)
                     self.keepConnectionThread.start()
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -353,10 +358,10 @@ sock.bind((UDP_IP, UDP_PORT))
 recieveMessagesThread = RecieveMessagesThread(sock, msgDict, lstDict, ackDict, errDict, mutexes)
 recieveMessagesThread.start()
 
-keepConnectionThread = KeepConnectionThread(sock, REG_NODE_UDP_IP, REG_NODE_UDP_PORT, PEER_USERNAME)
+keepConnectionThread = KeepConnectionThread(sock, UDP_IP, UDP_PORT, REG_NODE_UDP_IP, REG_NODE_UDP_PORT, PEER_USERNAME)
 keepConnectionThread.start()
 
-recieveRPCCommands = RecieveCommandsFromRPC(sock, REG_NODE_UDP_IP, REG_NODE_UDP_PORT, PEER_USERNAME, PEER_ID, msgDict, lstDict, ackDict, errDict, mutexes, keepConnectionThread)
+recieveRPCCommands = RecieveCommandsFromRPC(sock, UDP_IP, UDP_PORT, REG_NODE_UDP_IP, REG_NODE_UDP_PORT, PEER_USERNAME, PEER_ID, msgDict, lstDict, ackDict, errDict, mutexes, keepConnectionThread)
 recieveRPCCommands.start()
 
 
