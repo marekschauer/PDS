@@ -2,6 +2,7 @@ import json
 import bencode
 import abc
 import random
+from datetime import datetime
 
 #TODO: implementuj vsade bencode metodu
 
@@ -63,6 +64,7 @@ class HelloCommand(Command):
 		self.username = self.commandDict['username']
 		self.ipv4 = self.commandDict['ipv4']
 		self.port = self.commandDict['port']
+		self.arrived = datetime.now()
 	def bencode(self):
 		return bencode.bencode({
 			"type": self.type,
