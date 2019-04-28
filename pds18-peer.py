@@ -172,7 +172,6 @@ class RecieveCommandsFromRPC(threading.Thread):
                     thisMoment = datetime.now()
                     while((datetime.now() - thisMoment).seconds < 2):
                         if getListMSG.txid in self.ackDict:
-                            # print("prisiel nam ACK na spravu " + str(getListMSG.txid))
                             ack = self.ackDict[getListMSG.txid]
                             self.ackDictMutex.acquire()
                             del self.ackDict[getListMSG.txid]
@@ -180,11 +179,7 @@ class RecieveCommandsFromRPC(threading.Thread):
                             # prijmem LIST spravu
                             while True:
                                 if not self.lstQueue.empty():
-                                    print("shaaaaaaaat")
                                     listMsg = self.lstQueue.get()
-                                    # self.lstDictMutex.acquire()
-                                    # del self.lstDict[getListMSG.txid]
-                                    # self.lstDictMutex.release()
                                     if listMsg.isUserThere(messageToLogin):
                                         messageToBeSent = messages.MessageCommand({
                                             "type":"message",
@@ -196,12 +191,11 @@ class RecieveCommandsFromRPC(threading.Thread):
                                         dstIp, dstPort = listMsg.getUserAddr(messageToLogin)
                                         if dstIp != False and dstPort != False:
                                             messageToBeSent.send(self.sock, dstIp, dstPort)
-                                            # print("Poslal som spravu na ", dstIp, ":", dstPort)
                                             thisMoment = datetime.now()
                                             while((datetime.now() - thisMoment).seconds < 2):
                                                 if messageToBeSent.txid in self.ackDict:
                                                     ack = self.ackDict[messageToBeSent.txid]
-                                                    # print("Dostal som ACK na MESSAGE, ktoru som odoslal")
+                                                    # ("Dostal som ACK na MESSAGE, ktoru som odoslal")
                                                     self.ackDictMutex.acquire()
                                                     del self.ackDict[messageToBeSent.txid]
                                                     self.ackDictMutex.release()
@@ -214,7 +208,6 @@ class RecieveCommandsFromRPC(threading.Thread):
                                                     print("Following ERR mesage has been recieved from another peer as an answer to MESSAGE message:", sys.stderr)
                                                     print("\t\"" + errMsg.verbose + "\"")
                                                     break
-                                    # print("$"*15)
                                     break
                             break
                         elif getListMSG.txid in self.errDict:
@@ -226,9 +219,7 @@ class RecieveCommandsFromRPC(threading.Thread):
                             print("\t\"" + errMsg.verbose + "\"")
                             break
                         else:
-                            # print("nedoslo nic, opakujem")
                             pass
-                    # print("doslo ci nedoslo, som vonku")
                 elif recievedCommandDict["command"] == "getlist":
                     txid = messages.Command.txidGenerate()
                     getListMSG = messages.GetListCommand("").fromObject({
@@ -246,7 +237,6 @@ class RecieveCommandsFromRPC(threading.Thread):
                             self.ackDictMutex.release()
                             answerRecieved = True
                             while True:
-                                print("shaaaaaaaat")
                                 if not self.lstQueue.empty():
                                     listMsg = self.lstQueue.get()
                                     break
@@ -263,7 +253,7 @@ class RecieveCommandsFromRPC(threading.Thread):
                         else:
                             pass
                     if not answerRecieved:
-                        print("No answer has been recieved to GETLIST message", sys.stderr)
+                        pass
                 elif recievedCommandDict["command"] == "peers":
                     txid = messages.Command.txidGenerate()
                     getListMSG = messages.GetListCommand("").fromObject({
@@ -282,7 +272,7 @@ class RecieveCommandsFromRPC(threading.Thread):
                             answerRecieved = True
                             while True:
                                 if not self.lstQueue.empty():
-                                    print("shaaaaaaaat")
+                                    # print("shaaaaaaaat")
                                     listMsg = self.lstQueue.get()
                                     listMsg.printPeers()
                                     break
@@ -304,7 +294,6 @@ class RecieveCommandsFromRPC(threading.Thread):
                     self.keepConnectionThread.logout()
                     newRegNodeIp = recievedCommandDict["reg_ipv4"]
                     newRegNodePort = recievedCommandDict["reg_port"]
-                    print("hello")
                     self.keepConnectionThread = KeepConnectionThread(self.sock, self.my_ip, self.my_port, newRegNodeIp, int(newRegNodePort), self.username)
                     self.keepConnectionThread.start()
 
@@ -366,25 +355,3 @@ keepConnectionThread.start()
 
 recieveRPCCommands = RecieveCommandsFromRPC(sock, UDP_IP, UDP_PORT, REG_NODE_UDP_IP, REG_NODE_UDP_PORT, PEER_USERNAME, PEER_ID, msgDict, lstQueue, ackDict, errDict, mutexes, keepConnectionThread)
 recieveRPCCommands.start()
-
-
-
-# for line in fileinput.input():
-#     print("idem von...")
-#     # keepConnectionThread.logout()
-#     recieveMessagesThread.stop()
-#     print("idem cakat na stop connection threadu")
-#     # keepConnectionThread.join()
-#     print("idem cakat na stop message threadu")
-#     recieveMessagesThread.join()
-#     print("skoncene, idem breaknut")
-#     break
-
-# print("som tu mehehe")
-# sys.exit()
-    
-
-
-# time.sleep(10)
-
-# print("Poslal som")

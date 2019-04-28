@@ -22,17 +22,11 @@ class RecieveMessagesThread (threading.Thread):
         self.stopevent = threading.Event()
         self.sock = sock
         self.instanceInfo = instanceInfo
-        # peersDict = peersDict
         self.nodesDict = nodesDict
         self.helloQueue = hello_queue
         self.peersDictMutex = peersDictMutex
         self.nodesDictMutex = nodes_dict_mutex
-        # self.maintainPeersDatabaseThread = maintainPeersDatabaseThread
 
-        # self.lstDict = lstDict
-        # self.ackDict = ackDict
-        # self.errDict = errDict
-        # self.dictMutex = dict_mutex
     def run(self):
         global peersDict
         global nodesDict
@@ -50,9 +44,6 @@ class RecieveMessagesThread (threading.Thread):
             
                 # self.dictMutex.acquire()
                 if msgType == "hello":
-                    # print("*******************Prijal som hello od ", message_ip_from
-                    # , ":", message_port_from)
-
                     # TODO - ak prisla sprava s ip adresou 0.0.0.0 a portom 0,
                     # vymazeme dany zaznam z nasej DB a posleme UPDATE spravu
                     helloCommand = messages.HelloCommand(data)
@@ -70,9 +61,6 @@ class RecieveMessagesThread (threading.Thread):
 
                     pass
                 elif msgType == "getlist":
-                    # print("!"*30)
-                    # print("SOM TU SOM TU WOOOHO SOM TU")
-                    # print("!"*30)
                     command = messages.GetListCommand(data)
                     if True:
                         command.sendAck(self.sock, message_ip_from, message_port_from)
@@ -96,8 +84,6 @@ class RecieveMessagesThread (threading.Thread):
                             "txid":command.txid, 
                             "peers": dbToBeSent
                             })
-                        
-                        # print(bencode.decode(bencode.encode(dbToBeSent)))
                         
                         answer.send(self.sock, message_ip_from, message_port_from)
                     else:
@@ -138,16 +124,6 @@ class RecieveMessagesThread (threading.Thread):
                         for peerKey, peerRecord in updateMessage.db[ipAndPort].items():
                             if ipAndPort != str(self.instanceInfo["UDP_IP"] + "," + str(self.instanceInfo["UDP_PORT"])):
                             # ulozim si len tych peerov, ktorych nepoznam
-                                # print("!"*20, 
-                                #     "\n", 
-                                #     "Zapisujem si k sebe", 
-                                #     peerRecord["username"], 
-                                #     "lebo",
-                                #     ipAndPort,
-                                #     "!=",
-                                #     str(self.instanceInfo["UDP_IP"] + "," + str(self.instanceInfo["UDP_PORT"])),
-                                #     "!"*20, 
-                                #     "\n")
                                 authoritative = False
                                 if peerKey == str(senderIp + "," + str(senderPort)):
                                     authoritative = True
@@ -165,30 +141,7 @@ class RecieveMessagesThread (threading.Thread):
                                 self.peersDictMutex.release()
                             else:
                                 pass
-                    # Prejdem si databazu a pozriem sa na IP a port odosielatela
-                    # najdem si v databaze, ktoru mi poslal zaznam pre IP a port odosielatela
-                    # vsetky jeho zaznamy si pridam do mojej databazy peerov
-                    # for key, record in updateMessage.db[senderIp + "," + str(senderPort)].items():
-                    #     # print("*"*30, record, "*"*30)
-                    #     # helloCommand = messages.HelloCommand({
-                    #     #                 "type": "hello",
-                    #     #                 "txid": messages.Command.txidGenerate(),
-                    #     #                 "username": record["username"],
-                    #     #                 "ipv4": record["ipv4"],
-                    #     #                 "port": record["port"]
-                    #     #                 })
-                    #     peerEntry = PeersDBRecord(
-                    #             record["ipv4"], 
-                    #             record["port"], 
-                    #             record["username"], 
-                    #             senderIp,
-                    #             senderPort,
-                    #             True)
-                    #     self.peersDictMutex.acquire()
-                    #     peersDict[record["username"]] = peerEntry
-                    #     self.peersDictMutex.release()
-
-                    # self.maintainPeersDatabaseThread.updatePeers(self.peersDict)
+                    
                     pass
                 elif msgType == "disconnect":
                     # command = messages.ListCommand(data)
@@ -207,19 +160,11 @@ class RecieveMessagesThread (threading.Thread):
                     print("Peer recieved unsupported type of message. Message is being ignored", sys.stderr)
                 # print("-"*20)
                 # print("peersDict", peersDict)
-                # print("nodesDict obsahuje", len(nodesDict), "prvkov:", nodesDict)
+                # print("nodesDict", nodesDict)
                 # print("lstDict", self.lstDict)
                 # print("ackDict", self.ackDict)
                 # print("errDict", self.errDict)
                 # self.dictMutex.release()
-    # # def updatePeers(self, peersDict):
-    # #     self.peersDictMutex.acquire()
-    # #     self.peersDict = peersDict
-    # #     self.peersDictMutex.release()
-    # def updateNodes(self, nodesDict):
-    #     self.nodesDictMutex.acquire()
-    #     self.nodesDict = nodesDict
-    #     self.nodesDictMutex.release()
     def setMaintainPeersDatabaseThread(self, maintainPeersDatabaseThread):
         self.maintainPeersDatabaseThread = maintainPeersDatabaseThread
 
@@ -230,22 +175,11 @@ class MaintainPeersDatabaseThread (threading.Thread):
         global peersDict
         global nodesDict
         self.stopevent = threading.Event()
-        # self.peersDict = peersDict
-        # self.nodes = nodesDict
         self.helloQueue = hello_queue
         self.peersMutex = peers_mutex
         self.nodesDictMutex = nodes_dict_mutex
         self.instanceInfo = instanceInfo
         self.sock = socket
-
-        #TODO - zmaz cely nasledujuci if aj s telom
-        # if self.instanceInfo["UDP_PORT"] == 13002:
-        #     anotherNode = NodesDBRecord("192.168.1.15", 13001, True)
-        #     nodesDict[anotherNode.nodeHash] = anotherNode
-        #     anotherNode = NodesDBRecord("192.168.1.15", 13003, True)
-        #     nodesDict[anotherNode.nodeHash] = anotherNode
-        #     anotherNode = NodesDBRecord("192.168.1.15", 13004, True)
-        #     nodesDict[anotherNode.nodeHash] = anotherNode
     def run(self):
         global peersDict
         global nodesDict
@@ -309,6 +243,7 @@ class MaintainPeersDatabaseThread (threading.Thread):
 
             for key in nodesDict:
                 commandToBeSent.send(self.sock, (nodesDict[key]).ip, (nodesDict[key]).port)
+                # print("Poslal som UPDATE message na", (nodesDict[key]).ip, (nodesDict[key]).port)
                 pass
             
             time.sleep(3)
@@ -330,7 +265,7 @@ class MaintainNodesDatabaseThread (threading.Thread):
             newNodesDict = copy.copy(nodesDict)
             for key in nodesDict:
                 if (datetime.now() - nodesDict[key].arrived).seconds > 12:
-                    print("... deleting node from my DB of nodes ...")
+                    # print("... deleting node from my DB of nodes ...")
                     del newNodesDict[key]
             nodesDict = newNodesDict
             self.nodesDictMutex.release()
@@ -381,8 +316,8 @@ class RecieveCommandsFromRPC(threading.Thread):
                         print("I have no neighbors")
                     pass
                 if recievedCommandDict["command"] == "connect":
-                    print("command 'connect' has been recieved...")
-                    print(recievedCommand)
+                    # print("command 'connect' has been recieved...")
+                    # print(recievedCommand)
                     nodeIp = recievedCommandDict["reg_ipv4"]
                     nodePort = recievedCommandDict["reg_port"]
                     newNodeEntry = NodesDBRecord(nodeIp, nodePort, False)
