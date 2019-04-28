@@ -139,8 +139,15 @@ class MessageCommand(Command):
 class UpdateCommand(Command):
 	def __init__(self, commandBody):
 		super(UpdateCommand, self).__init__("update", commandBody)
+		if not self.ready:
+			self.fromObject(commandBody)
 		self.db = self.commandDict['db']
-		
+	def bencode(self):
+		return bencode.bencode({"type":self.type, "txid":self.txid, "db": self.db})
+
+
+
+
 
 # someCommand = UpdateCommand('d2:dbd17:192.0.2.198,12345d1:0d4:ipv49:192.0.2.14:porti34567e8:username8:xlogin00e1:1d4:ipv49:192.0.2.24:porti45678e8:username8:xnigol99ee17:192.0.2.199,12345d1:0d4:ipv49:192.0.2.34:porti65432e8:username8:xtestx00eee4:txidi123e4:type6:updatee')
 #tmp = bencode.decode(b"d4:txidi123e4:type7:getliste").decode("utf-8")
