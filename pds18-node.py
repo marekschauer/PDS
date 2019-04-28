@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+
+"""
+Registration node application
+PDS project
+Hybrid chat 
+Author: Marek Schauer (xschau00)
+Year: 2018/2019
+
+"""
+
 import socket
 import threading
 import time
@@ -42,10 +52,7 @@ class RecieveMessagesThread (threading.Thread):
             else:
                 command = None
             
-                # self.dictMutex.acquire()
                 if msgType == "hello":
-                    # TODO - ak prisla sprava s ip adresou 0.0.0.0 a portom 0,
-                    # vymazeme dany zaznam z nasej DB a posleme UPDATE spravu
                     helloCommand = messages.HelloCommand(data)
                     peerEntry = PeersDBRecord(
                         helloCommand.ipv4, 
@@ -164,7 +171,6 @@ class RecieveMessagesThread (threading.Thread):
                 # print("lstDict", self.lstDict)
                 # print("ackDict", self.ackDict)
                 # print("errDict", self.errDict)
-                # self.dictMutex.release()
     def setMaintainPeersDatabaseThread(self, maintainPeersDatabaseThread):
         self.maintainPeersDatabaseThread = maintainPeersDatabaseThread
 
@@ -194,8 +200,7 @@ class MaintainPeersDatabaseThread (threading.Thread):
             newPeersDict = copy.copy(peersDict)
             for key in peersDict:
                 # print(type(peersDict[key]))
-                if (datetime.now() - (peersDict[key]).arrived).seconds > 10:
-                    # TODO - limit ma byt 30 sekund
+                if (datetime.now() - (peersDict[key]).arrived).seconds > 30:
                     del newPeersDict[key]
             peersDict = newPeersDict
             self.peersMutex.release()

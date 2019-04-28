@@ -1,0 +1,32 @@
+PDS projekt - Hybridná chatovacia P2P sieť
+
+Implementačným jazykom je python.
+
+Projekt pozostáva z nasledovných aplikácii:
+	- pds18-node.py
+	- pds18-peer.py
+	- pds18-rpc.py
+
+Pre ovládanie peera alebo registračného uzla je možné použiť RPC podľa zadania.
+
+Spustenie registračného uzla:
+$ chmod +x pds18-node.py
+$ ./pds18-node.py --id <identifikátor> --reg-ipv4 <IP> --reg-port <port>
+
+Spustenie peera:
+$ chmod +x pds18-peer.py
+$ ./pds18-peer.py --id <identifikátor> --reg-ipv4 <IP> --reg-port <port>
+
+Spustenie RPC aplikácie:
+$ chmod +x pds18-rpc.py
+$ ./pds18-rpc.py --id <identifikátor> --reg-ipv4 <IP> --reg-port <port>
+
+Obmedzenia:
+	- Registračný uzol nemá implementovanú správu DISCONNECT a nijak na ňu nereaguje
+	- Registračný uzol nijak nereaguje na RPC volanie so správou SYNC
+
+Projekt bol odskúšaný na merlinovi s nasledovnými spolužiakmi:
+	- Tomáš Blažek (xblaze31)
+	- Jan Bartoň (xbarto88)
+	- Patrik Krhovský (xkrhov02)
+	- Martina Zembjaková (xzembj00)

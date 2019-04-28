@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+
+"""
+Peer application
+PDS project
+Hybrid chat 
+Author: Marek Schauer (xschau00)
+Year: 2018/2019
+
+"""
+
 import socket
 import threading
 import time
@@ -12,9 +22,6 @@ import messages
 import queue
 from datetime import datetime
 import argparse
-#TODO
-#   spravit ukoncovanie vlaken
-#   vypisovat prichodzie spravy typu MESSAGE
 
 class RecieveMessagesThread (threading.Thread):
     def __init__(self, sock, msgDict, lstQueue, ackDict, errDict, mutexes):
@@ -45,24 +52,12 @@ class RecieveMessagesThread (threading.Thread):
                 self.dictMutex.acquire()
                 if msgType == "message":
                     command = messages.MessageCommand(data)
-                    # print("Idem poslat ACK na adresu ", message_ip_from, " a port ", message_port_from)
                     command.sendAck(self.sock, message_ip_from, message_port_from)
-                    # print("Poslal som ACK...")
-                    # self.msgDictMutex.acquire()
-                    # self.msgDict[command.txid] = command
-                    # self.msgDictMutex.release()
                     print(command.fromWho, " wrote: ", command.message)
-                    # print("@"*5)
-                    # for key in self.msgDict:
-                    #     print(self.msgDict[key].message)
-                    # print("@"*5)
                 elif msgType == "list":
                     command = messages.ListCommand(data)
                     command.sendAck(self.sock, message_ip_from, message_port_from)
                     self.lstQueue.put(command)
-                    # self.lstDictMutex.acquire()
-                    # self.lstDict[command.txid] = command
-                    # self.lstDictMutex.release()
                     pass
                 elif msgType == "ack":
                     self.ackDictMutex.acquire()
@@ -151,10 +146,8 @@ class RecieveCommandsFromRPC(threading.Thread):
         self.keepConnectionThread = keepConnectionThread
     def run(self):
         if os.path.exists("/tmp/pds_rpc_peer_socket" + str(self.peerId)):
-            # print("existuje socket!")
             
             while True:
-                # {'command': 'message', 'from': 'marekschauer', 'to': 'shukarfale', 'message': None}
                 rpcCommand = self.rpcSocket.recv(4096)
                 recievedCommand = rpcCommand.decode("utf-8")
                 recievedCommandDict = json.loads(recievedCommand)

@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
 
+"""
+RPC application for sending messages to peer or registration node
+PDS project
+Hybrid chat 
+Author: Marek Schauer (xschau00)
+Year: 2018/2019
+
+"""
 import socket
 import threading
 import time
@@ -103,14 +111,3 @@ elif args.node:
             peer.send(toBeSent.encode("utf-8"))
         else:
             print("Could not send command to the node, socket does not exist", sys.stderr)
-
-    
-
-
-
-
-# sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-# sock.bind(("127.0.0.1", 25010))
-# while True:
-#     data, addr = sock.recvfrom(4096)
-#     print(data.decode("utf-8"))
